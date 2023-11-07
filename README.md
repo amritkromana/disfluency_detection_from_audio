@@ -23,7 +23,7 @@ gdown --id 1BeT7m_5qv19Sb5yrZ2zhKu6fEprUoB9N -O config.json
 gdown --id 15xQiVew2SatAL_7E5Hh30hya8x7tyGb_ -O pytorch_model.bin
 cd ..
 gdown --id 1GQIXgCSF3Usiuy5hkxgOl483RPX3f_SX -O language.pt
-gdown --id 1JF5g6uzDvdU_D1r8IJUJDb5n-l77wAOh -O acoustic.pt
+gdown --id 1wWrmopvvdhlBw-cL7EDyih9zn_IJu5Wr -O acoustic.pt
 gdown --id 1LPchbScA_cuFx1XoNxpFCYZfGoJCfWao -O multimodal.pt
 ```
 
