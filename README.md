@@ -9,11 +9,12 @@ It also includes preprocessing code for the Switchboard dataset, to align audio,
 ## Dependencies 
 
 The following packages are needed: 
-- pandas 
-- torch 
-- transformers 
-- whisper_timestamped 
-- gdown 
+- pandas==1.5.0
+- torch==1.12.1
+- torchaudio==0.12.1
+- transformers==4.22.2
+- whisper_timestamped==1.14.4
+- gdown==5.1.0
 
 Use gdown to download the pretrained model weights and save to demo_models: 
 ```
@@ -29,20 +30,21 @@ gdown --id 1LPchbScA_cuFx1XoNxpFCYZfGoJCfWao -O multimodal.pt
 
 ## How to run the demo 
 
-Given some input.wav and output.csv, we can run any of these options: 
+Given some input.wav, we can run any of these options: 
 ```
-python3 demo.py --input_file input.wav --output_file output.csv --modality language
-```
-```
-python3 demo.py --input_file input.wav --output_file output.csv --modality acoustic
+python3 demo.py --audio_file input.wav --output_file pred.csv --output_trans trans.csv --modality language
 ```
 ```
-python3 demo.py --input_file input.wav --output_file output.csv --modality multimodal
+python3 demo.py --audio_file input.wav --output_file pred.csv --modality acoustic
+```
+```
+python3 demo.py --audio_file input.wav --output_file pred.csv --modality multimodal
 ```
 The ``language`` option runs a Whisper model that's been fine-tuned for verbatim transcription, and then uses the text + timestamps as input to a BERT model that's been fine-tuned for disfluency detection.
 The ``acoustic`` option runs a WavLM model that's been fine-tuned for acoustic-based disfluency detection. 
 The ``multimodal`` option runs the language and acoustic models, concatenates their embeddings, and runs them through a BLSTM fusion model. 
-The frame-level disfluency predictions will be printed to output.csv. 
+The frame-level disfluency predictions will be printed to pred.csv.
+For the language option, ASR transcripts and word-level disfluency predictions will be printed to trans.csv.
 
 # Switchboard Preprocessing 
 
