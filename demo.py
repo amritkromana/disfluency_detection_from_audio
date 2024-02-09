@@ -4,7 +4,6 @@ import argparse
 import logging
 import numpy as np
 import pandas as pd
-from IPython import embed
 
 import torch, torchaudio
 
@@ -24,8 +23,9 @@ def run_asr(audio_file, device):
     audio_rs.to(device)
 
     # Load in Whisper model that has been fine-tuned for verbatim speech transcription
-    model = whisper.load_model('/data/aromana/ICASSP23/github/disfluency_detection_from_audio/demo_models/asr', device='cuda')
+    model = whisper.load_model('demo_models/asr', device='cpu')
     model.to(device)
+    print('loaded finetuned whisper asr') 
 
     # Get Whisper output
     result = whisper.transcribe(model, audio_rs, language='en', beam_size=5, temperature=(0.0, 0.2, 0.4, 0.6, 0.8, 1.0))
@@ -50,6 +50,8 @@ def run_language_based(audio_file, text_df, device):
     # Initialize Bert model and load in pre-trained weights
     model = BertForTokenClassification.from_pretrained('bert-base-uncased', num_labels=5)
     model.load_state_dict(torch.load('demo_models/language.pt', map_location='cpu'))
+    print('loaded finetuned language model') 
+
     model.config.output_hidden_states = True
     model.to(device)
 
@@ -116,6 +118,7 @@ def run_acoustic_based(audio_file, device):
     model = AcousticModel()
     model.load_state_dict(torch.load('demo_models/acoustic.pt', map_location='cpu'))
     model.to(device)
+    print('loaded finetuned acoustic model') 
 
     # Get WavLM output
     emb, output = model(audio_feats)
@@ -140,6 +143,7 @@ def run_multimodal(language, acoustic, device):
     model = MultimodalModel()
     model.load_state_dict(torch.load('demo_models/multimodal.pt', map_location='cpu'))
     model.to(device)
+    print('loaded finetuned multimodal model') 
 
     # Get multimodal output
     output = model(language, acoustic)
@@ -178,20 +182,23 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--audio_file', type=str, default=None, required=True, help='path to 8k .wav file')
+    parser.add_argument('--output_trans', type=str, default=None, required=False, help='path to intermediate .csv with asr transcript')
     parser.add_argument('--output_file', type=str, default=None, required=True, help='path to output .csv')
-    parser.add_argument('--device', type=str, default='cpu', help='cpu or gpu')
+    parser.add_argument('--device', type=str, default='cpu', help='cpu or cuda')
     parser.add_argument('--modality', type=str, default='multimodal', choices=['language', 'acoustic', 'multimodal'],
                         help='modality can be language, acoustic, or multimodal')
 
     args = parser.parse_args()
 
     # Setup log
-    setup_log(args.output_file.replace('.csv', '.log'))
+    #setup_log(args.output_file.replace('.csv', '.log'))
 
     # Get predictions
     text_df = None
     if args.modality == 'language' or args.modality == 'multimodal':
         text_df = run_asr(args.audio_file, args.device)
+        if args.output_trans is not None: 
+            text_df.to_csv(args.output_trans)
         language_emb, preds = run_language_based(args.audio_file, text_df, args.device)
     if args.modality == 'acoustic' or args.modality == 'multimodal':
         acoustic_emb, preds = run_acoustic_based(args.audio_file, args.device)
@@ -199,7 +206,7 @@ if __name__ == '__main__':
         preds = run_multimodal(language_emb, acoustic_emb, args.device)
 
     # Save output
-    pred_df = pd.DataFrame(preds.cpu(), columns=labels)
+    pred_df = pd.DataFrame(preds.cpu(), columns=labels).astype(int)
     pred_df['frame_time'] = [round(i * 0.02, 2) for i in range(pred_df.shape[0])]
     pred_df = pred_df.set_index('frame_time')
     pred_df.to_csv(args.output_file)
